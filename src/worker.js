@@ -1,3 +1,4 @@
+import { handleAdminApi } from './admin-api.js';
 /**
  * DEAL! Boxing Membership MVP
  * - LINE-verified registration, session cookie, check-ins, self-service consent and deletion.
@@ -199,8 +200,9 @@ async function asset(request, env) {
   if (!env.ASSETS) return fail("ASSETS_MISSING", "เว็บยังไม่ได้ถูกอัปโหลด", 503);
   const url = new URL(request.url);
   // Do not server-redirect LIFF primary URL before liff.init() completes.
-  if (url.pathname === "/" || /^\/m\/BX[A-Z0-9-]{2,20}\/?$/.test(url.pathname)) {
-    const index = new URL("/index.html", url.origin);
+  const isAdmin = url.pathname === "/admin" || url.pathname === "/admin/" || url.pathname === "/admin.html";
+  if (isAdmin || url.pathname === "/" || /^\/m\/BX[A-Z0-9-]{2,20}\/?$/.test(url.pathname)) {
+    const index = new URL(isAdmin ? "/admin.html" : "/index.html", url.origin);
     const response = await env.ASSETS.fetch(new Request(index, { method: "GET" }));
     return new Response(response.body, { status: response.status, headers: {
       "content-type": "text/html; charset=utf-8",
@@ -220,6 +222,11 @@ export default {
     try {
       if (path.startsWith("/api/")) {
         if (!env.DB && path !== "/api/config") return fail("DB_NOT_CONFIGURED", "ฐานข้อมูลยังไม่พร้อม", 503);
+        // Admin data always passes both signed-session and admin_users checks.
+        if (path.startsWith("/api/admin/")) {
+          const signedInMember = await sessionMember(request, env);
+          return handleAdminApi(request, env, signedInMember);
+        }
         if (!["GET", "POST", "DELETE"].includes(request.method)) return fail("METHOD_NOT_ALLOWED", "Method not allowed", 405);
         if (request.method !== "GET" && !correctOrigin(request)) return fail("ORIGIN_REJECTED", "Origin ไม่ถูกต้อง", 403);
         if (path === "/api/config" && request.method === "GET") return json({
