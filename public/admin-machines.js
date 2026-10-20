@@ -133,26 +133,101 @@ async function openQr(m){
 function closeQr(){ $('qr-dialog').close();if(state.qrObjectUrl)URL.revokeObjectURL(state.qrObjectUrl);state.qrObjectUrl=null; }
 async function copyQr(){if(!state.qrUrl)return;try{await navigator.clipboard.writeText(state.qrUrl);toast('คัดลอก LIFF URL แล้ว');}catch{window.prompt('คัดลอกลิงก์สมาชิก',state.qrUrl);}}
 function downloadQr(){if(!state.qrObjectUrl||!state.qrCode)return;const a=document.createElement('a');a.href=state.qrObjectUrl;a.download=`DEAL-Boxing-${state.qrCode}-Membership-QR.svg`;document.body.appendChild(a);a.click();a.remove();}
-async function init(){
-  try{
-    const config=await api('/api/config');
-    if(!config.ready||!config.liffId)throw new Error('ยังไม่ตั้งค่า LINE LIFF หรือ SESSION_SECRET');
-    if(!window.liff)throw new Error('โหลด LINE SDK ไม่สำเร็จ');
-    await window.liff.init({liffId:config.liffId});
-    if(!window.liff.isLoggedIn()){showAccess('เข้าสู่ระบบด้วย LINE','ใช้บัญชี LINE ที่ได้รับสิทธิ์ Admin เท่านั้น','login');return;}
-    const idToken=window.liff.getIDToken();
-    if(!idToken)throw new Error('ไม่พบ LINE ID Token โปรดตรวจ scope openid');
-    const auth=await api('/api/auth/line','POST',{idToken});
-    if(auth.registrationRequired){showAccess('ยังไม่ได้สมัครสมาชิก','โปรดสมัครสมาชิกผ่าน LINE ก่อนขอสิทธิ์ Admin','none');return;}
+function showRegistry() {
+  $('access-screen').classList.add('hidden');
+  $('machine-app').classList.remove('hidden');
+}
+
+async function init() {
+  showAccess('กำลังตรวจสอบสิทธิ์', 'ตรวจสอบเซสชันผู้ดูแลระบบ', 'none');
+  try {
+    const config = await api('/api/config');
+    if (!config.ready || !config.liffId) throw new Error('ยังไม่ตั้งค่า LINE LIFF หรือ SESSION_SECRET');
+
+    // The signed, first-party session cookie can still be valid even when
+    // the LINE ID token in the current browser has expired. Check it first.
+    try {
+      await loadMachines();
+      showRegistry();
+      return;
+    } catch (error) {
+      if (error.status === 403) {
+        showAccess('ไม่มีสิทธิ์ Admin', 'บัญชีนี้ไม่ได้รับสิทธิ์ Admin จากผู้ดูแลระบบ', 'none');
+        return;
+      }
+      if (error.status !== 401) throw error;
+    }
+
+    if (!window.liff) throw new Error('โหลด LINE SDK ไม่สำเร็จ');
+    await window.liff.init({ liffId: config.liffId });
+    if (!window.liff.isLoggedIn()) {
+      showAccess('เข้าสู่ระบบด้วย LINE', 'ใช้บัญชี LINE ที่ได้รับสิทธิ์ Admin เท่านั้น', 'login');
+      return;
+    }
+
+    const idToken = window.liff.getIDToken();
+    if (!idToken) {
+      showAccess('ต้องยืนยัน LINE ใหม่', 'ไม่พบโทเค็น LINE ที่ใช้งานได้ กรุณาเข้าสู่ระบบอีกครั้ง', 'login');
+      return;
+    }
+
+    let auth;
+    try {
+      auth = await api('/api/auth/line', 'POST', { idToken });
+    } catch (error) {
+      if (error.status === 401) {
+        showAccess('ต้องยืนยัน LINE ใหม่', 'โทเค็น LINE เดิมหมดอายุหรือใช้ไม่ได้ กดปุ่มเพื่อเข้าสู่ระบบใหม่', 'login');
+        return;
+      }
+      throw error;
+    }
+    if (auth.registrationRequired) {
+      showAccess('ยังไม่ได้สมัครสมาชิก', 'โปรดสมัครสมาชิกผ่าน LINE ก่อนขอสิทธิ์ Admin', 'none');
+      return;
+    }
+
+    // The LINE exchange has issued a fresh, signed session cookie.
     await loadMachines();
-    $('access-screen').classList.add('hidden');$('machine-app').classList.remove('hidden');
-  }catch(err){
-    if(err.status===403)showAccess('ไม่มีสิทธิ์ Admin','บัญชี LINE นี้ไม่ได้รับสิทธิ์ Admin จากผู้ดูแลระบบ','none');
-    else if(err.status===401)showAccess('กรุณาล็อกอินอีกครั้ง','Session หมดอายุหรือ LINE ต้องยืนยันตัวตนใหม่','login');
-    else showAccess('ระบบมีข้อผิดพลาด',err.message||'โหลดข้อมูลไม่สำเร็จ','retry');
+    showRegistry();
+  } catch (error) {
+    if (error.status === 403) {
+      showAccess('ไม่มีสิทธิ์ Admin', 'บัญชี LINE นี้ไม่ได้รับสิทธิ์ Admin จากผู้ดูแลระบบ', 'none');
+    } else if (error.status === 401) {
+      showAccess('กรุณาล็อกอินอีกครั้ง', 'ระบบไม่พบเซสชันที่ใช้งานได้ หรือเบราว์เซอร์ไม่รับคุกกี้จากเว็บไซต์', 'login');
+    } else {
+      showAccess('ระบบมีข้อผิดพลาด', error.message || 'โหลดข้อมูลไม่สำเร็จ', 'retry');
+    }
   }
 }
-$('sign-in').addEventListener('click',()=>{if(window.liff&&!window.liff.isLoggedIn())window.liff.login({redirectUri:location.href});else init();});
+
+async function startFreshLineLogin() {
+  const trigger = $('sign-in');
+  if (trigger.disabled) return;
+  trigger.disabled = true;
+  try {
+    const config = await api('/api/config');
+    if (!config.liffId) throw new Error('ยังไม่ได้เชื่อม LINE LIFF');
+    if (!window.liff) throw new Error('ไม่สามารถโหลด LINE SDK ได้');
+    await window.liff.init({ liffId: config.liffId });
+    const redirectUri = new URL('/admin/machines', location.origin).href;
+    if (typeof window.liff.isInClient === 'function' && window.liff.isInClient()) {
+      // In the LIFF browser, LINE authenticates during liff.init().
+      // liff.login() cannot be used there; reopen through the official LIFF URL.
+      location.assign(`https://liff.line.me/${encodeURIComponent(config.liffId)}/admin/machines`);
+      return;
+    }
+    // Important: liff.isLoggedIn() can be true even when our server rejected
+    // a stale ID token. The old button called init() again and got stuck.
+    if (window.liff.isLoggedIn()) window.liff.logout();
+    window.liff.login({ redirectUri });
+  } catch (error) {
+    showAccess('เปิด LINE ไม่สำเร็จ', error.message || 'กรุณาลองใหม่อีกครั้ง', 'retry');
+  } finally {
+    trigger.disabled = false;
+  }
+}
+
+$('sign-in').addEventListener('click', startFreshLineLogin);
 $('retry').addEventListener('click',()=>location.reload());
 $('refresh-machines').addEventListener('click',()=>loadMachines().then(()=>toast('อัปเดตทะเบียนตู้แล้ว')).catch(e=>alertInline(e.message)));
 $('machine-form').addEventListener('submit',saveMachine);
