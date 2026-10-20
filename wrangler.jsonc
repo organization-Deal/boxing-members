@@ -17,7 +17,7 @@
     {
       "binding": "DB",
       "database_name": "boxing-members",
-      "database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID",
+      "database_id": "1cc74194-7aeb-4f81-9dc4-f61a60c06833"
       "migrations_dir": "migrations"
     }
   ]
