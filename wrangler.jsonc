@@ -1,0 +1,24 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "deal-boxing-membership",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-10-20",
+  "workers_dev": true,
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "vars": {
+    "LINE_LOGIN_CHANNEL_ID": "2012120948",
+    "LIFF_ID": "REPLACE_WITH_LIFF_ID"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "boxing-members",
+      "database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID",
+      "migrations_dir": "migrations"
+    }
+  ]
+}

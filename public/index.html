@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f8f8f6" />
+  <meta name="description" content="DEAL! Boxing Club — ระบบสมาชิกสำหรับผู้ใช้บริการตู้ชกมวย DEAL!" />
+  <title>DEAL! Boxing Club</title>
+  <link rel="stylesheet" href="/style.css" />
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js" defer></script>
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="header">
+      <a class="brand" href="/" aria-label="DEAL! Boxing Club หน้าหลัก">
+        <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span class="brand-title">DEAL<span>!</span> <strong>BOXING</strong><small>MEMBERSHIP CLUB</small></span>
+      </a>
+      <span class="header-pill"><i></i> MEMBER ACCESS</span>
+    </header>
+
+    <main id="main-content">
+      <section id="loading-screen" class="screen is-visible loading-screen" aria-live="polite">
+        <div class="loading-orbit"><span></span></div>
+        <p class="overline">DEAL! BOXING CLUB</p>
+        <h1>กำลังเตรียมพื้นที่ของคุณ</h1>
+        <p class="muted">เชื่อมต่อระบบสมาชิก...</p>
+      </section>
+
+      <section id="welcome-screen" class="screen" aria-labelledby="welcome-title">
+        <div class="hero-topline"><span class="tiny-rule"></span><span>WELCOME TO THE CLUB</span><span class="index-number">01 / 03</span></div>
+        <div class="hero-art" aria-hidden="true">
+          <div class="hero-art-label">BOXING / 001</div>
+          <div class="hero-art-ring ring-one"></div><div class="hero-art-ring ring-two"></div>
+          <div class="hero-art-letter">B<span>!</span></div>
+          <div class="hero-art-footer">MOVE. PUNCH. REPEAT.</div>
+        </div>
+        <div class="headline"><p class="overline">WELCOME TO DEAL! BOXING CLUB</p>
+          <h1 id="welcome-title">ทุกหมัด<br/><em>มีเรื่องราว</em></h1>
+          <p class="intro">สมัครสมาชิกด้วย LINE ครั้งเดียว เพื่อบันทึกการเช็กอินที่ตู้ชกมวยและรับข่าวสารที่คุณเลือกได้</p>
+        </div>
+        <div id="machine-chip-welcome" class="location-line is-hidden"><span class="dot"></span><span id="machine-welcome-text">กำลังตรวจสอบรหัสตู้</span></div>
+        <button id="line-login-button" type="button" class="btn btn-line"><span class="line-icon">LINE</span><span>ดำเนินการด้วย LINE</span><span aria-hidden="true">↗</span></button>
+        <p id="setup-warning" class="warning is-hidden" role="alert"></p>
+        <p class="helper">สมัครฟรี · ไม่มีรหัสผ่าน · ไม่เกี่ยวข้องกับการชำระเงินที่ตู้</p>
+      </section>
+
+      <section id="register-screen" class="screen" aria-labelledby="register-title">
+        <div class="section-top"><span class="overline">ONE LAST STEP</span><span class="index-number">02 / 03</span></div>
+        <h1 id="register-title" class="section-title">ยินดีต้อนรับ<br/><em>สู่คลับของเรา</em></h1>
+        <div class="register-user"><div class="user-icon">↗</div><div><span class="field-label">บัญชี LINE</span><strong id="register-name">สมาชิกใหม่</strong><p>ไม่ต้องกรอกเบอร์โทรหรือสร้างรหัสผ่าน</p></div><span class="verified">ยืนยันแล้ว</span></div>
+        <div class="register-panel">
+          <h2>เงื่อนไขการสมัครสมาชิก</h2>
+          <label class="checkrow"><input type="checkbox" id="privacy-checkbox"/><span>ฉันอ่านและยอมรับ <a href="/privacy.html" target="_blank" rel="noopener">นโยบายความเป็นส่วนตัว</a> สำหรับการจัดการข้อมูลสมาชิก</span></label>
+          <div class="soft-divider"></div>
+          <label class="checkrow"><input type="checkbox" id="marketing-checkbox"/><span>ฉันยินยอมรับข่าวสาร โปรโมชัน และสิทธิพิเศษผ่าน LINE <small>(ไม่บังคับ และเปลี่ยนใจได้ภายหลัง)</small></span></label>
+        </div>
+        <button id="register-button" type="button" class="btn btn-dark" disabled>สร้างบัญชีสมาชิก <span aria-hidden="true">→</span></button>
+        <p class="helper">สมัครแล้วก็ยังจ่ายเงินและเล่นผ่าน QR BOX บนตู้ตามปกติ</p>
+      </section>
+
+      <section id="home-screen" class="screen" aria-labelledby="home-title">
+        <div class="section-top"><span class="overline">YOUR PERSONAL SPACE</span><span class="index-number">03 / 03</span></div>
+        <div class="home-heading"><div><p class="overline">GOOD TO SEE YOU</p><h1 id="home-title">พร้อมลุย<br/><em>อีกสักรอบไหม?</em></h1></div><div class="heading-art" aria-hidden="true">B!</div></div>
+        <div class="member-card">
+          <div class="member-card-header"><span>DEAL! BOXING CLUB</span><span class="member-star">✳</span></div>
+          <div class="member-card-body"><span class="field-label">MEMBER NAME</span><strong id="member-name">—</strong><span class="field-label label-gap">MEMBER ID</span><div id="member-code" class="member-code">DBX——</div></div>
+          <div class="member-card-footer"><span>ACTIVE MEMBER</span><span id="member-since">MEMBER SINCE —</span></div>
+        </div>
+        <div id="machine-panel" class="machine-panel is-hidden">
+          <div class="panel-heading"><div><p class="overline">CURRENT LOCATION</p><h2 id="machine-name">ตู้ชกมวย</h2></div><span id="machine-tag" class="machine-tag">BX001</span></div>
+          <p id="machine-location" class="location-description">—</p>
+          <button id="checkin-button" class="btn btn-dark" type="button">บันทึกการเช็กอิน <span aria-hidden="true">↗</span></button>
+          <p class="footnote">การเช็กอินไม่ได้ยืนยันการชำระเงินหรือจำนวนเกมที่เล่น</p>
+        </div>
+        <div id="no-machine-panel" class="machine-panel is-hidden">
+          <p class="overline">SCAN AT THE MACHINE</p>
+          <h2>อยากเช็กอินที่ตู้ไหน?</h2><p class="location-description">สแกน QR สมาชิกที่ติดอยู่บนตู้ชกมวย เพื่อเปิดหน้าเช็กอินของตู้นั้น</p>
+        </div>
+        <div class="stats-strip"><div><span class="field-label">TOTAL CHECK-INS</span><strong id="visit-count">0</strong></div><span class="stats-divider"></span><div><span class="field-label">MEMBERSHIP</span><strong class="active-label">ACTIVE <span>●</span></strong></div></div>
+        <section class="history"><div class="history-head"><h2>กิจกรรมล่าสุด</h2><span>CHECK-IN HISTORY</span></div><div id="activity-list" class="activity-list"><p class="empty-state">ยังไม่มีประวัติเช็กอิน</p></div></section>
+        <div class="settings"><div><h2>ข่าวสารและโปรโมชัน</h2><p>อนุญาตให้ส่งข้อความทางการตลาดผ่าน LINE</p></div><label class="switch" aria-label="ยินยอมรับข้อความการตลาด"><input type="checkbox" id="marketing-toggle"/><span class="switch-track"></span></label></div>
+        <div class="account-actions"><button id="logout-button" type="button" class="text-button">ออกจากระบบ</button><button id="delete-button" type="button" class="text-button danger">ลบบัญชีและข้อมูลสมาชิก</button></div>
+      </section>
+
+      <section id="error-screen" class="screen" aria-labelledby="error-title"><div class="error-symbol">!</div><p class="overline">SOMETHING WENT WRONG</p><h1 id="error-title">ระบบยังไม่พร้อม</h1><p id="error-message" class="intro">กรุณาลองอีกครั้ง</p><button id="retry-button" type="button" class="btn btn-dark">ลองใหม่อีกครั้ง <span>↗</span></button></section>
+    </main>
+
+    <footer class="footer"><div><strong>DEAL<span>!</span></strong><span>THE ART OF OWNERSHIP</span></div><div><a href="/privacy.html" target="_blank" rel="noopener">ความเป็นส่วนตัว</a><span>© 2026 DEAL! BOXING CLUB</span></div></footer>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
