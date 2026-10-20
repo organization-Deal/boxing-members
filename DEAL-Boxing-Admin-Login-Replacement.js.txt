@@ -1,0 +1,69 @@
+async function init(){
+  access('กำลังตรวจสอบสิทธิ์ Admin','กำลังตรวจสอบสิทธิ์','none');
+  try{
+    const config=await api('/api/config');
+    if(!config.liffId || !config.ready)throw new Error('ยังไม่ตั้งค่า LIFF หรือ SESSION_SECRET');
+
+    // Match /admin/machines: prefer a valid first-party signed session.
+    // The server still verifies admin_users for every request.
+    try {
+      await api(`/api/admin/summary?days=${state.days}`);
+      await loadDashboard();
+      return;
+    } catch(e) {
+      if(e.status===403){
+        access('บัญชีนี้ยังไม่ได้รับสิทธิ์ Admin','ไม่มีสิทธิ์เข้าถึง','none');
+        return;
+      }
+      if(e.status!==401)throw e;
+    }
+
+    // Only use LINE ID Token after the server session expires.
+    if(!window.liff)throw new Error('ไม่สามารถโหลด LINE SDK ได้');
+    await window.liff.init({liffId:config.liffId});
+    if(!window.liff.isLoggedIn()){
+      access('กรุณาเข้าสู่ระบบด้วย LINE อีกครั้ง','ลงชื่อเข้าใช้งาน','login');
+      return;
+    }
+    const idToken=window.liff.getIDToken();
+    if(!idToken){
+      access('ไม่พบ LINE ID Token โปรดเข้าสู่ระบบใหม่','เข้าสู่ระบบอีกครั้ง','login');
+      return;
+    }
+    let auth;
+    try {
+      auth=await api('/api/auth/line','POST',{idToken});
+    } catch(e) {
+      if(e.status===401){
+        access('LINE Token หมดอายุหรือไม่ถูกต้อง โปรดเข้าสู่ระบบใหม่','เข้าสู่ระบบอีกครั้ง','login');
+        return;
+      }
+      throw e;
+    }
+    if(auth.registrationRequired){
+      access('ต้องสมัครสมาชิกผ่านหน้าปกติก่อนจึงจะขอสิทธิ์ Admin ได้','ยังไม่ได้สมัครสมาชิก','none');
+      return;
+    }
+    await loadDashboard();
+  }catch(e){access(e.message||'เชื่อมต่อไม่ได้','ไม่สามารถเริ่มระบบได้','retry')}
+}
+
+async function freshLineLogin(){
+  const button=$('sign-in');
+  button.disabled=true;
+  try {
+    const config=await api('/api/config');
+    if(!config.liffId)throw new Error('ยังไม่ได้เชื่อม LINE LIFF');
+    if(!window.liff)throw new Error('ไม่สามารถโหลด LINE SDK ได้');
+    await window.liff.init({liffId:config.liffId});
+    if(typeof window.liff.isInClient==='function' && window.liff.isInClient()){
+      location.assign(`https://liff.line.me/${encodeURIComponent(config.liffId)}/admin`);
+      return;
+    }
+    if(window.liff.isLoggedIn())window.liff.logout();
+    window.liff.login({redirectUri:new URL('/admin',location.origin).href});
+  }catch(e){
+    access(e.message||'เข้าสู่ระบบ LINE ไม่สำเร็จ','เข้าสู่ระบบอีกครั้ง','retry');
+  }finally {button.disabled=false;}
+}
+$('sign-in').addEventListener('click',freshLineLogin);

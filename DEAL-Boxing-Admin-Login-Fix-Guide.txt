@@ -1,0 +1,16 @@
+DEAL! Boxing Club Admin Dashboard Login Hotfix
+
+สาเหตุ: หน้า /admin เรียก LINE ID token ใหม่ทุกครั้ง แม้มี signed session cookie ที่ยังใช้ได้ ขณะที่ /admin/machines เช็ก session ก่อน
+
+ขั้นตอนบน GitHub (แก้เฉพาะ public/admin.js)
+1. เปิด https://github.com/organization-Deal/boxing-members/blob/main/public/admin.js
+2. กด Edit
+3. ค้นหา async function init(){
+4. แทนที่ตั้งแต่ async function init(){ จนถึงบรรทัด $('sign-in').addEventListener(...) ถัดจากปีกกาปิดของ init ด้วยเนื้อหาใน DEAL-Boxing-Admin-Login-Replacement.js.txt
+5. ห้ามลบ listener อื่น ๆ ของ retry, days, refresh, member-search, prev-page, next-page และ init() ท้ายไฟล์
+6. Commit to main และรอ Cloudflare Deploy สำเร็จ
+7. เปิดหน้า /admin ใหม่ หลังจากเปิด /admin/machines เพื่อยืนยันว่ามี session อยู่
+
+ทางเลือกผ่าน Git: git apply DEAL-Boxing-Admin-Login-Fix.patch (จาก root repository)
+
+ไม่ต้องเปลี่ยน SESSION_SECRET, LINE Channel, สิทธิ owner หรือข้อมูลฐานสมาชิก
