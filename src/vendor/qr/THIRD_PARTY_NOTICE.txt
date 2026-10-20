@@ -1,0 +1,2 @@
+QR encoding modules adapted to ECMAScript modules from qrcode-terminal 0.12.0 vendor/QRCode. Original QRCode for JavaScript Copyright (c) 2009 Kazuhiko Arase, MIT License; qrcode-terminal Copyright Gord Tanner and contributors, Apache-2.0.
+Modified here only to replace CommonJS require/module.exports with ESM import/export.

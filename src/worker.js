@@ -200,9 +200,10 @@ async function asset(request, env) {
   if (!env.ASSETS) return fail("ASSETS_MISSING", "เว็บยังไม่ได้ถูกอัปโหลด", 503);
   const url = new URL(request.url);
   // Do not server-redirect LIFF primary URL before liff.init() completes.
+  const isMachines = url.pathname === "/admin/machines" || url.pathname === "/admin/machines/" || url.pathname === "/admin-machines.html";
   const isAdmin = url.pathname === "/admin" || url.pathname === "/admin/" || url.pathname === "/admin.html";
-  if (isAdmin || url.pathname === "/" || /^\/m\/BX[A-Z0-9-]{2,20}\/?$/.test(url.pathname)) {
-    const index = new URL(isAdmin ? "/admin.html" : "/index.html", url.origin);
+  if (isAdmin || isMachines || url.pathname === "/" || /^\/m\/BX[A-Z0-9-]{2,20}\/?$/.test(url.pathname)) {
+    const index = new URL(isMachines ? "/admin-machines.html" : isAdmin ? "/admin.html" : "/index.html", url.origin);
     const response = await env.ASSETS.fetch(new Request(index, { method: "GET" }));
     return new Response(response.body, { status: response.status, headers: {
       "content-type": "text/html; charset=utf-8",

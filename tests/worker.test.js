@@ -195,3 +195,84 @@ test('explicitly authorized admin sees safe summaries, members, machines and che
     assert.equal(response.headers.get('cache-control'),'private, no-store');
   } finally { restore(); }
 });
+
+test('machine registry: only owner creates/edits, QR SVG is membership link and data is not a payment record',async()=>{
+  const { env,restore }=setup();
+  try {
+    let res=await worker.fetch(request('/api/auth/line','POST',{idToken:validToken,privacyAccepted:true,marketingOptIn:false}),env);
+    const cookie=res.headers.get('set-cookie').split(';')[0];
+    // Membership alone grants no access.
+    res=await worker.fetch(request('/api/admin/machines','GET',undefined,cookie),env);
+    assert.equal(res.status,403);
+    env.DB.sqlite.prepare("INSERT INTO admin_users (member_id,role) VALUES (1,'owner')").run();
+    res=await worker.fetch(request('/api/admin/machines','GET',undefined,cookie),env);
+    assert.equal(res.status,200);
+    let data=await res.json();
+    assert.equal(data.role,'owner');
+    assert.equal(data.items[0].code,'BX001');
+    assert.equal(data.items[0].membershipUrl,'https://liff.line.me/2012120948-demoLIFF/m/BX001');
+    assert.equal('line_user_id' in data.items[0],false);
+    // Cross-origin request must NOT change the machine registry.
+    res=await worker.fetch(request('/api/admin/machines','POST',{
+      machineCode:'BX002',machineName:'เครื่อง 2',locationName:'เชียงใหม่',locationCode:'L0249',active:true
+    },cookie,false),env);
+    assert.equal(res.status,403);
+    res=await worker.fetch(request('/api/admin/machines','POST',{
+      machineCode:'BX002',machineName:'เครื่อง 2',locationName:'เชียงใหม่',locationCode:'L0249',active:true
+    },cookie),env);
+    assert.equal(res.status,201);
+    res=await worker.fetch(request('/api/admin/machines','POST',{
+      machineCode:'BX002',machineName:'เครื่อง 2',locationName:'เชียงใหม่',locationCode:'L0249',active:true
+    },cookie),env);
+    assert.equal(res.status,409);
+    assert.equal(env.DB.sqlite.prepare("select count(*) as n from machines where machine_code='BX002'").get().n,1);
+    // A blank Location Master mapping is not silently manufactured.
+    res=await worker.fetch(request('/api/admin/machines','POST',{
+      machineCode:'BX003',machineName:'เครื่อง 3',locationName:'โลเคชั่นรอตรวจสอบ',locationCode:'Lfake',active:true
+    },cookie),env);
+    assert.equal(res.status,400);
+    res=await worker.fetch(request('/api/admin/machines/BX002','PATCH',{
+      machineName:'เครื่อง 2 ใหม่',locationName:'สาขาจริง',locationCode:'L0249',active:true
+    },cookie),env);
+    assert.equal(res.status,200);
+    assert.equal(env.DB.sqlite.prepare("select location_name from machines where machine_code='BX002'").get().location_name,'สาขาจริง');
+    res=await worker.fetch(request('/api/admin/machines/BX002/qr.svg','GET',undefined,cookie),env);
+    assert.equal(res.status,200);
+    assert.match(res.headers.get('content-type'),/image\/svg\+xml/);
+    const svg=await res.text();
+    assert.match(svg,/<svg/);
+    assert.match(svg,/<path /);
+    assert.doesNotMatch(svg,/LINE.*secret|TOKEN|AKI|QR BOX/);
+    res=await worker.fetch(request('/api/admin/machines/BX002','PATCH',{
+      machineName:'เครื่อง 2 ใหม่',locationName:'สาขาจริง',locationCode:'L0249',active:false
+    },cookie),env);
+    assert.equal(res.status,200);
+    res=await worker.fetch(request('/api/machine?code=BX002','GET',undefined,cookie),env);
+    assert.equal(res.status,404);
+    res=await worker.fetch(request('/api/admin/machines/BX002/qr.svg','GET',undefined,cookie),env);
+    assert.equal(res.status,409);
+  }finally{restore();}
+});
+
+test('viewer can inspect machine inventory but can neither change it nor fetch private QR without authentication',async()=>{
+ const {env,restore}=setup();
+ try {
+    let res=await worker.fetch(request('/api/auth/line','POST',{idToken:validToken,privacyAccepted:true,marketingOptIn:false}),env);
+    const cookie=res.headers.get('set-cookie').split(';')[0];
+    env.DB.sqlite.prepare("INSERT INTO admin_users (member_id,role) VALUES (1,'viewer')").run();
+    res=await worker.fetch(request('/api/admin/machines','GET',undefined,cookie),env);
+    assert.equal(res.status,200);
+    assert.equal((await res.json()).role,'viewer');
+    res=await worker.fetch(request('/api/admin/machines','POST',{
+      machineCode:'BX004',machineName:'ไม่ควรสร้าง',locationCode:'',locationName:'ไม่มีจริง',active:true
+    },cookie),env);
+    assert.equal(res.status,403);
+    res=await worker.fetch(request('/api/admin/machines/BX001','PATCH',{
+      machineName:'ไม่ควรแก้ไข',locationCode:'',locationName:'ไม่มีจริง',active:false
+    },cookie),env);
+    assert.equal(res.status,403);
+    res=await worker.fetch(request('/api/admin/machines/BX001/qr.svg'),env);
+    assert.equal(res.status,401);
+    assert.equal(env.DB.sqlite.prepare('select count(*) as n from machines').get().n,1);
+ } finally{restore()}
+});

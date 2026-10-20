@@ -1,3 +1,4 @@
+import { handleMachineAdminApi } from './machine-admin-api.js';
 /**
  * DEAL! Boxing Admin — all analytics are CHECK-INS, never payment or game-play proof.
  * Authorization is done on EVERY /api/admin request using the signed member session
@@ -128,6 +129,9 @@ export async function handleAdminApi(request, env, signedInMember) {
   // NO automatic elevation. An authorized operator must INSERT a verified member_id.
   const admin = await env.DB.prepare('SELECT role FROM admin_users WHERE member_id = ?').bind(signedInMember.id).first();
   if (!admin) return json({ error: 'ADMIN_FORBIDDEN', message: 'บัญชีนี้ไม่ได้รับอนุญาตให้ดูข้อมูลหลังบ้าน' }, 403);
+  if (new URL(request.url).pathname.startsWith('/api/admin/machines')) {
+    return handleMachineAdminApi(request, env, admin);
+  }
   if (request.method !== 'GET') return json({ error: 'METHOD_NOT_ALLOWED' }, 405);
   const url = new URL(request.url);
   if (url.pathname === '/api/admin/summary') return summary(env, url);
